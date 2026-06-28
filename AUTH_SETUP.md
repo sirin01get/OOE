@@ -24,9 +24,13 @@ Email sign-in uses Supabase OTP/magic-link auth through
   browser `localStorage` as `ooe:lastAuthEmail` so the next login screen
   can prefill and display the last-used email.
 - After the user verifies the link, Supabase creates a browser session.
-  On later visits, `App.jsx` calls `supabase.auth.getSession()` first; if
-  the session is still valid, OOE skips `AuthGate` and opens the app
-  directly.
+  OOE explicitly persists that session in browser storage through
+  Supabase Auth, auto-refreshes tokens, and detects sessions in auth
+  redirect URLs. On later visits, `App.jsx` restores the session and
+  opens the app directly.
+- `App.jsx` subscribes to Supabase auth events immediately, then checks
+  the current session. This prevents a magic-link or restored session
+  from being missed during startup.
 - OOE never treats the remembered email alone as authentication. The app
   screen only opens when Supabase returns a valid session.
 - While signed in, the top bar shows `session.user.email` next to
@@ -35,6 +39,9 @@ Email sign-in uses Supabase OTP/magic-link auth through
   in-memory session immediately, and returns to `AuthGate` with the email
   OTP form ready. The user must verify email again or choose an enabled
   OAuth provider to continue.
+- The browser session should remain active until the user clicks "Sign
+  out" or Supabase invalidates/expires the refresh session according to
+  project Auth settings.
 - OOE applies defensive timeouts when loading the Supabase session and
   `/config.json`. If Supabase is slow, temporarily unreachable, or rate
   limited, the UI falls back to the login screen instead of staying on

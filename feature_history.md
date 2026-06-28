@@ -1,5 +1,14 @@
 # Feature History
 
+## 2026-06-28 - Persistent Browser Auth Session
+
+- Made Supabase browser auth persistence, token refresh, and redirect
+  session detection explicit.
+- Subscribed to Supabase auth events before resolving startup session
+  state so email magic-link login opens the OEE topic app immediately.
+- Documented that the email auth session stays in the browser until
+  explicit sign-out or Supabase refresh-session invalidation.
+
 ## 2026-06-28 - Direct Cloudflare Pages Deployment Bypass
 
 - Deployed directly to existing Cloudflare Pages project

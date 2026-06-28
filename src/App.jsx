@@ -68,6 +68,23 @@ export default function App() {
       }
     }
 
+    function applySession(sess, eventType = null) {
+      if (!mounted) return
+      if (sess?.user?.email) {
+        localStorage.setItem('ooe:lastAuthEmail', sess.user.email)
+      }
+      if (eventType === 'SIGNED_IN') {
+        trackAuthEvent(sess, 'signed_in').catch((err) => {
+          console.warn('Could not track auth event', err)
+        })
+      }
+      setSession(sess)
+    }
+
+    const { data: sub } = supabase.auth.onAuthStateChange((event, sess) => {
+      applySession(sess, event)
+    })
+
     withTimeout(
       supabase.auth.getSession(),
       SESSION_LOAD_TIMEOUT_MS,
@@ -75,27 +92,15 @@ export default function App() {
     )
       .then(({ data }) => {
         if (!mounted) return
-        if (data.session?.user?.email) {
-          localStorage.setItem('ooe:lastAuthEmail', data.session.user.email)
+        if (data.session) {
+          applySession(data.session)
+        } else {
+          setSession((current) => (current === undefined ? null : current))
         }
-        setSession(data.session)
       })
       .catch((err) => {
         console.warn('Could not load Supabase session', err)
-        if (mounted) setSession(null)
-      })
-
-    const { data: sub } = supabase.auth.onAuthStateChange((event, sess) => {
-      if (!mounted) return
-      if (sess?.user?.email) {
-        localStorage.setItem('ooe:lastAuthEmail', sess.user.email)
-      }
-      if (event === 'SIGNED_IN') {
-        trackAuthEvent(sess, 'signed_in').catch((err) => {
-          console.warn('Could not track auth event', err)
-        })
-      }
-      setSession(sess)
+        if (mounted) setSession((current) => (current === undefined ? null : current))
     })
     return () => {
       mounted = false

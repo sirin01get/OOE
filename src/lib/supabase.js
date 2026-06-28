@@ -26,4 +26,12 @@ export const supabaseConfigError = (() => {
   return null
 })()
 
-export const supabase = supabaseConfigError ? null : createClient(url, anonKey)
+export const supabase = supabaseConfigError
+  ? null
+  : createClient(url, anonKey, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true
+      }
+    })
