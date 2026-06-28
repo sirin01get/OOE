@@ -1,5 +1,11 @@
 # Feature History
 
+## 2026-06-28 - Cloudflare Deploy Command Alias
+
+- Added `npm run deploy` as a short alias for the Pages upload command.
+- Documented the exact Cloudflare failure caused by `npx wrangler deploy`
+  running against a Pages project.
+
 ## 2026-06-28 - Cloudflare Pages Deploy Command Fix
 
 - Updated Wrangler to v4 for Cloudflare's current deployment flow.

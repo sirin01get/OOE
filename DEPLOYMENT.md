@@ -33,6 +33,7 @@
      with `22`.
    - Deploy command: leave blank for normal Git-connected Pages
      deployments. If the dashboard requires a deploy command, use
+     `npm run deploy` or
      `npx wrangler pages deploy dist --project-name ooe`.
      Do not use `npx wrangler deploy`; that is the Workers deploy command
      and Cloudflare rejects it for Pages projects.
@@ -82,7 +83,7 @@
    - Build command: `npm run build`
    - Build output directory: `dist`
    - Node version: `22` or newer
-   - Deploy command: blank, or exactly
+   - Deploy command: blank, `npm run deploy`, or exactly
      `npx wrangler pages deploy dist --project-name ooe`
    - Remove any deploy command set to `npx wrangler deploy`
 3. Settings → Environment variables:
@@ -197,3 +198,22 @@ https://YOUR_PROJECT.supabase.co/auth/v1/callback
 - Cloudflare Pages keeps a deployment history per project — any prior
   deployment can be promoted to Production instantly from the dashboard
   if a release breaks something.
+
+## 10. Known Cloudflare deploy-command failure
+
+If the log says:
+
+```text
+Executing user deploy command: npx wrangler deploy
+It seems that you have run `wrangler deploy` on a Pages project
+Missing entry-point to Worker script or to assets directory
+```
+
+the app build succeeded, but Cloudflare is running the Workers deploy
+command against a Pages project. Fix the Cloudflare Pages build setting:
+
+1. Workers & Pages → your Pages project → Settings → Builds & deployments.
+2. Change Deploy command from `npx wrangler deploy` to `npm run deploy`.
+3. If Cloudflare requires the raw Wrangler command instead, use
+   `npx wrangler pages deploy dist --project-name ooe`.
+4. Retry the deployment.
