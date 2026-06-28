@@ -1,5 +1,14 @@
 # Feature History
 
+## 2026-06-28 - Cloudflare Pages GitHub Deployment Support
+
+- Added Cloudflare Pages SPA routing and static security/cache headers.
+- Added `/api/health` to verify required encrypted server variables
+  without exposing secret values.
+- Added `npm run pages:deploy` for Wrangler-based Pages deployment.
+- Documented Cloudflare manual setup, encrypted variables, health checks,
+  and post-deploy verification.
+
 ## 2026-06-28 - Runtime Authentication Config
 
 - Added `public/config.json` with auth toggles for Google, Apple, X, and email.

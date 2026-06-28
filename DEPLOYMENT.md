@@ -24,13 +24,18 @@
 ## 3. Cloudflare Pages
 
 1. Cloudflare dashboard → Workers & Pages → Create → Pages → Connect to
-   Git → select the repo.
+   Git → select `sirin01get/OOE`.
 2. Build settings:
    - Framework preset: Vite
    - Build command: `npm run build`
    - Build output directory: `dist`
-3. Environment variables (Settings → Environment variables), set for both
-   Production and Preview:
+3. Cloudflare reads `wrangler.toml` for the project name, compatibility
+   date, and Pages build output directory. This repo also includes
+   `public/_redirects` for SPA fallback routing and `public/_headers` for
+   basic security/cache headers; Vite copies both into `dist`.
+4. Environment variables (Settings → Environment variables), set for both
+   Production and Preview. Cloudflare stores these values encrypted; do
+   not commit them to Git:
    - `VITE_SUPABASE_URL` — client-safe, Supabase project URL
    - `VITE_SUPABASE_ANON_KEY` — client-safe, Supabase anon key
    - `SUPABASE_URL` — server-side, same project URL
@@ -38,8 +43,41 @@
      user-scoped client in Functions)
    - `SUPABASE_SERVICE_ROLE_KEY` — server-side only, never expose to client
    - `ANTHROPIC_API_KEY` — server-side only
-4. Deploy. Cloudflare builds the static site and auto-detects
+5. Optional Wrangler CLI deployment after the variables exist in
+   Cloudflare:
+
+   ```bash
+   npm run pages:deploy
+   ```
+
+   For local Pages Functions testing against a built `dist` folder:
+
+   ```bash
+   npm run build
+   npm run pages:dev
+   ```
+
+6. Deploy. Cloudflare builds the static site and auto-detects
    `functions/api/*.js` as Pages Functions, deploying them alongside.
+
+## 3.1 Cloudflare manual setup checklist
+
+1. In Cloudflare Pages, open the connected GitHub project.
+2. Settings → Builds & deployments:
+   - Production branch: `main`
+   - Build command: `npm run build`
+   - Build output directory: `dist`
+3. Settings → Environment variables:
+   - Add the variables listed above to Production.
+   - Add the same variables to Preview if branch previews are used.
+   - Keep server-only values as encrypted Cloudflare variables and never
+     expose them with a `VITE_` prefix.
+4. Deployments → Retry deployment after changing variables.
+5. After deploy, open:
+   - `https://YOUR_DOMAIN/config.json` to confirm public auth config.
+   - `https://YOUR_DOMAIN/api/health` to confirm server-side encrypted
+     variables are present. The endpoint returns only variable names and
+     boolean presence, never secret values.
 
 ## 4. Authentication config
 
@@ -113,6 +151,8 @@ https://YOUR_PROJECT.supabase.co/auth/v1/callback
 - Simulate a slow or failing Supabase/session load and confirm the app
   leaves "Loading OOE..." and returns to the sign-in screen.
 - Confirm disabled sign-in methods are hidden according to `/config.json`.
+- Open `/api/health` and confirm it returns `ok: true` after Cloudflare
+  encrypted environment variables are configured.
 - Create a topic, run research, confirm `research_runs`/`elements` rows
   appear in Supabase and are scoped to your user only.
 - Sign in as a second test user and confirm you cannot see the first

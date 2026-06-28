@@ -146,6 +146,12 @@ Supabase's current X/Twitter OAuth provider key in this app is `x`:
   Without this, Google/Apple/X/email-link redirects will fail or bounce
   to the wrong place after login.
 
+For Cloudflare Pages deployments from GitHub, add both the production
+domain and preview deployment pattern before enabling a provider in
+`public/config.json`. Keep Supabase service-role and provider secrets in
+Supabase/Cloudflare encrypted settings only; never place them in
+`public/config.json` or any `VITE_` client variable.
+
 ## 5. Runtime auth config
 
 The login UI only renders methods enabled in `public/config.json`.
@@ -174,6 +180,9 @@ setup in Supabase for later.
 
 - If the page stays on "Loading OOE...", check the browser console for
   session/config timeout warnings.
+- On Cloudflare Pages, open `/api/health` to confirm encrypted
+  server-side variables are configured. The endpoint reports only
+  presence/absence and does not reveal secret values.
 - Check Supabase project status and Auth logs for throttling, rate
   limits, paused projects, or free-tier limits.
 - OTP/email links can be delayed or rate limited on free-tier projects,
