@@ -1,5 +1,13 @@
 # Feature History
 
+## 2026-06-28 - Cloudflare Pages Deploy Command Fix
+
+- Updated Wrangler to v4 for Cloudflare's current deployment flow.
+- Added `npm run pages:upload` using `wrangler pages deploy`.
+- Added Node 22 runtime guidance for Cloudflare Pages builds.
+- Documented that Pages projects must not use `npx wrangler deploy`,
+  which is the Workers deploy command.
+
 ## 2026-06-28 - Cloudflare Pages GitHub Deployment Support
 
 - Added Cloudflare Pages SPA routing and static security/cache headers.

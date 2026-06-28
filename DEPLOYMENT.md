@@ -29,6 +29,13 @@
    - Framework preset: Vite
    - Build command: `npm run build`
    - Build output directory: `dist`
+   - Node version: `22` or newer. This repo includes `.node-version`
+     with `22`.
+   - Deploy command: leave blank for normal Git-connected Pages
+     deployments. If the dashboard requires a deploy command, use
+     `npx wrangler pages deploy dist --project-name ooe`.
+     Do not use `npx wrangler deploy`; that is the Workers deploy command
+     and Cloudflare rejects it for Pages projects.
 3. Cloudflare reads `wrangler.toml` for the project name, compatibility
    date, and Pages build output directory. This repo also includes
    `public/_redirects` for SPA fallback routing and `public/_headers` for
@@ -50,6 +57,13 @@
    npm run pages:deploy
    ```
 
+   If Cloudflare has already completed the build and only needs an upload
+   command, use:
+
+   ```bash
+   npm run pages:upload
+   ```
+
    For local Pages Functions testing against a built `dist` folder:
 
    ```bash
@@ -67,9 +81,15 @@
    - Production branch: `main`
    - Build command: `npm run build`
    - Build output directory: `dist`
+   - Node version: `22` or newer
+   - Deploy command: blank, or exactly
+     `npx wrangler pages deploy dist --project-name ooe`
+   - Remove any deploy command set to `npx wrangler deploy`
 3. Settings → Environment variables:
    - Add the variables listed above to Production.
    - Add the same variables to Preview if branch previews are used.
+   - If Cloudflare does not pick up `.node-version`, add `NODE_VERSION`
+     with value `22`.
    - Keep server-only values as encrypted Cloudflare variables and never
      expose them with a `VITE_` prefix.
 4. Deployments → Retry deployment after changing variables.
