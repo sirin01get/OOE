@@ -9,6 +9,7 @@ node_modules/
 
 # Build output
 dist/
+.wrangler/
 
 # Logs
 *.log
@@ -22,4 +23,3 @@ pnpm-debug.log*
 Thumbs.db
 .vscode/
 .idea/
-

@@ -1,5 +1,15 @@
 # Feature History
 
+## 2026-06-28 - Direct Cloudflare Pages Deployment Bypass
+
+- Deployed directly to existing Cloudflare Pages project
+  `privyooe-pages`, bypassing the unresolved Git-connected deployment.
+- Updated Wrangler project name and deploy script to target
+  `privyooe-pages`.
+- Added `unresolved.md` to track the remaining Git deployment issue.
+- Verified the direct deploy preview serves `/config.json`; `/api/health`
+  reports missing server-side Cloudflare variables for manual follow-up.
+
 ## 2026-06-28 - Cloudflare Variable Diagnostics
 
 - Made missing `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` render a

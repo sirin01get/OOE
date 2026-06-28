@@ -34,7 +34,7 @@
    - Deploy command: leave blank for normal Git-connected Pages
      deployments. If the dashboard requires a deploy command, use
      `npm run deploy` or
-     `npx wrangler pages deploy dist --project-name ooe`.
+     `npx wrangler pages deploy dist --project-name privyooe-pages`.
      Do not use `npx wrangler deploy`; that is the Workers deploy command
      and Cloudflare rejects it for Pages projects.
 3. Cloudflare reads `wrangler.toml` for the project name, compatibility
@@ -75,6 +75,24 @@
 6. Deploy. Cloudflare builds the static site and auto-detects
    `functions/api/*.js` as Pages Functions, deploying them alongside.
 
+## 3.0 Direct deployment bypass
+
+The current working Cloudflare Pages project is `privyooe-pages`. If the
+Git-connected deployment path fails, deploy directly:
+
+```bash
+npm run build
+npm run deploy
+```
+
+This runs:
+
+```bash
+wrangler pages deploy dist --project-name privyooe-pages
+```
+
+Known unresolved Git deployment notes are tracked in `unresolved.md`.
+
 ## 3.1 Cloudflare manual setup checklist
 
 1. In Cloudflare Pages, open the connected GitHub project.
@@ -84,7 +102,7 @@
    - Build output directory: `dist`
    - Node version: `22` or newer
    - Deploy command: blank, `npm run deploy`, or exactly
-     `npx wrangler pages deploy dist --project-name ooe`
+     `npx wrangler pages deploy dist --project-name privyooe-pages`
    - Remove any deploy command set to `npx wrangler deploy`
 3. Settings → Environment variables:
    - Add the variables listed above to Production.
@@ -221,7 +239,7 @@ command against a Pages project. Fix the Cloudflare Pages build setting:
 1. Workers & Pages → your Pages project → Settings → Builds & deployments.
 2. Change Deploy command from `npx wrangler deploy` to `npm run deploy`.
 3. If Cloudflare requires the raw Wrangler command instead, use
-   `npx wrangler pages deploy dist --project-name ooe`.
+   `npx wrangler pages deploy dist --project-name privyooe-pages`.
 4. Retry the deployment.
 
 ## 11. Missing Cloudflare variables troubleshooting
