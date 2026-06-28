@@ -183,6 +183,12 @@ setup in Supabase for later.
 - On Cloudflare Pages, open `/api/health` to confirm encrypted
   server-side variables are configured. The endpoint reports only
   presence/absence and does not reveal secret values.
+- If the browser shows `OOE couldn't start`, check whether
+  `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are missing from the
+  Cloudflare Pages environment used by that deployment.
+- If an API response says `Cloudflare environment variables are not
+  configured`, add the listed server-side variables in Cloudflare Pages
+  and redeploy.
 - Check Supabase project status and Auth logs for throttling, rate
   limits, paused projects, or free-tier limits.
 - OTP/email links can be delayed or rate limited on free-tier projects,

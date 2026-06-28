@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { BrowserRouter, Routes, Route, Link, Navigate } from 'react-router-dom'
-import { supabase } from './lib/supabase.js'
+import { supabase, supabaseConfigError } from './lib/supabase.js'
 import TopicList from './components/TopicList.jsx'
 import ResearchScreen from './components/ResearchScreen.jsx'
 import PrioritizeScreen from './components/PrioritizeScreen.jsx'
@@ -61,6 +61,12 @@ export default function App() {
 
   useEffect(() => {
     let mounted = true
+    if (!supabase) {
+      setSession(null)
+      return () => {
+        mounted = false
+      }
+    }
 
     withTimeout(
       supabase.auth.getSession(),
@@ -102,6 +108,10 @@ export default function App() {
       localStorage.setItem('ooe:lastAuthEmail', session.user.email)
     }
     sessionStorage.setItem('ooe:postSignOut', '1')
+    if (!supabase) {
+      setSession(null)
+      return
+    }
     try {
       await withTimeout(supabase.auth.signOut(), SESSION_LOAD_TIMEOUT_MS, 'Supabase sign-out timed out')
     } catch (err) {
@@ -116,7 +126,7 @@ export default function App() {
   }
 
   if (!session) {
-    return <AuthGate />
+    return <AuthGate startupError={supabaseConfigError?.message} />
   }
 
   const userEmail = session.user?.email

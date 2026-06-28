@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { supabase } from '../lib/supabase.js'
+import { supabase, supabaseConfigError } from '../lib/supabase.js'
 
 const DEFAULT_AUTH_CONFIG = {
   google: true,
@@ -36,7 +36,7 @@ function XIcon() {
   )
 }
 
-export default function AuthGate() {
+export default function AuthGate({ startupError = null }) {
   const [email, setEmail] = useState(() => localStorage.getItem('ooe:lastAuthEmail') || '')
   const [sent, setSent] = useState(false)
   const [error, setError] = useState(null)
@@ -87,6 +87,10 @@ export default function AuthGate() {
   async function handleEmailSubmit(e) {
     e.preventDefault()
     setError(null)
+    if (!supabase) {
+      setError(supabaseConfigError?.message || 'Supabase is not configured.')
+      return
+    }
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: { emailRedirectTo: window.location.origin }
@@ -100,6 +104,10 @@ export default function AuthGate() {
 
   async function handleOAuth(provider) {
     setError(null)
+    if (!supabase) {
+      setError(supabaseConfigError?.message || 'Supabase is not configured.')
+      return
+    }
     setOauthBusy(provider)
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
@@ -207,7 +215,7 @@ export default function AuthGate() {
 
         {!hasAnyAuth && <p className="form-error">No sign-in methods are currently available.</p>}
 
-        {error && <p className="form-error">{error}</p>}
+        {(startupError || error) && <p className="form-error">{startupError || error}</p>}
       </div>
     </div>
   )

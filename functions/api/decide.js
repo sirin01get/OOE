@@ -7,8 +7,10 @@ export async function onRequestPost({ request, env }) {
       return jsonResponse({ error: 'topic_id and decisions[] are required' }, 400)
     }
 
-    const supabase = getUserClient(request, env)
-    if (!supabase) return jsonResponse({ error: 'Missing or invalid Authorization header' }, 401)
+    const userClient = getUserClient(request, env)
+    if (userClient.envResponse) return userClient.envResponse
+    if (userClient.authResponse) return userClient.authResponse
+    const supabase = userClient.client
 
     const { data: topic, error: topicErr } = await supabase
       .from('topics')

@@ -23,8 +23,10 @@ export async function onRequestPost({ request, env }) {
     const { topic_id } = await request.json()
     if (!topic_id) return jsonResponse({ error: 'topic_id is required' }, 400)
 
-    const supabase = getUserClient(request, env)
-    if (!supabase) return jsonResponse({ error: 'Missing or invalid Authorization header' }, 401)
+    const userClient = getUserClient(request, env)
+    if (userClient.envResponse) return userClient.envResponse
+    if (userClient.authResponse) return userClient.authResponse
+    const supabase = userClient.client
 
     // Fetch topic, scoped by RLS to the authenticated user
     const { data: topic, error: topicErr } = await supabase
@@ -38,6 +40,20 @@ export async function onRequestPost({ request, env }) {
     await supabase.from('topics').update({ status: 'researching' }).eq('id', topic_id)
 
     const model = 'claude-sonnet-4-6'
+    if (!env.ANTHROPIC_API_KEY) {
+      await supabase.from('topics').update({ status: 'new' }).eq('id', topic_id)
+      return jsonResponse({
+        error: 'Cloudflare environment variables are not configured',
+        missing: ['ANTHROPIC_API_KEY'],
+        troubleshooting: [
+          'Cloudflare Pages -> project -> Settings -> Environment variables',
+          'Add ANTHROPIC_API_KEY to Production and Preview if needed',
+          'Redeploy after saving variables',
+          'Open /api/health to verify server variable presence'
+        ]
+      }, 500)
+    }
+
     const anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {

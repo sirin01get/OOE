@@ -1,4 +1,4 @@
-import { jsonResponse } from './_lib.js'
+import { getMissingEnv, jsonResponse } from './_lib.js'
 
 const REQUIRED_SERVER_ENV = [
   'SUPABASE_URL',
@@ -11,13 +11,20 @@ export async function onRequestGet({ env }) {
   const variables = Object.fromEntries(
     REQUIRED_SERVER_ENV.map((name) => [name, Boolean(env[name])])
   )
-  const missing = REQUIRED_SERVER_ENV.filter((name) => !env[name])
+  const missing = getMissingEnv(env, REQUIRED_SERVER_ENV)
 
   return jsonResponse(
     {
       ok: missing.length === 0,
       variables,
-      missing
+      missing,
+      troubleshooting: missing.length === 0
+        ? []
+        : [
+            'Cloudflare Pages -> project -> Settings -> Environment variables',
+            'Add missing variables to Production and Preview if preview deployments are used',
+            'Redeploy after saving variables'
+          ]
     },
     missing.length === 0 ? 200 : 500
   )

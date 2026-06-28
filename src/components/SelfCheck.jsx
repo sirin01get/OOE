@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { supabase } from '../lib/supabase.js'
+import { supabase, supabaseConfigError } from '../lib/supabase.js'
 
 // Runs a few cheap checks on startup and shows a clear diagnostic screen
 // instead of a blank page if something basic is misconfigured.
@@ -40,6 +40,16 @@ export default function SelfCheck({ children }) {
       ok: looksValid,
       detail: looksValid ? 'OK' : `Expected something like https://xxxx.supabase.co, got: ${url}`
     })
+
+    if (supabaseConfigError || !supabase) {
+      checks.push({
+        label: 'Supabase browser client can initialize',
+        ok: false,
+        detail: supabaseConfigError?.message || 'Supabase browser client is unavailable.'
+      })
+      setStatus({ state: 'fail', checks })
+      return
+    }
 
     try {
       const { error } = await supabase.auth.getSession()

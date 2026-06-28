@@ -99,6 +99,9 @@
    - `https://YOUR_DOMAIN/api/health` to confirm server-side encrypted
      variables are present. The endpoint returns only variable names and
      boolean presence, never secret values.
+   - If the app shows `OOE couldn't start`, check the startup list for
+     missing `VITE_SUPABASE_URL` or `VITE_SUPABASE_ANON_KEY`, add them in
+     Cloudflare Pages, and redeploy.
 
 ## 4. Authentication config
 
@@ -174,6 +177,9 @@ https://YOUR_PROJECT.supabase.co/auth/v1/callback
 - Confirm disabled sign-in methods are hidden according to `/config.json`.
 - Open `/api/health` and confirm it returns `ok: true` after Cloudflare
   encrypted environment variables are configured.
+- Temporarily remove one Preview variable in a non-production deployment
+  and confirm the app reports the missing variable instead of showing a
+  blank screen or indefinite loading state.
 - Create a topic, run research, confirm `research_runs`/`elements` rows
   appear in Supabase and are scoped to your user only.
 - Sign in as a second test user and confirm you cannot see the first
@@ -217,3 +223,23 @@ command against a Pages project. Fix the Cloudflare Pages build setting:
 3. If Cloudflare requires the raw Wrangler command instead, use
    `npx wrangler pages deploy dist --project-name ooe`.
 4. Retry the deployment.
+
+## 11. Missing Cloudflare variables troubleshooting
+
+Cloudflare variables are scoped by environment. Production and Preview
+must both be configured when you use branch previews.
+
+- Missing client variables (`VITE_SUPABASE_URL`,
+  `VITE_SUPABASE_ANON_KEY`): the browser shows the startup diagnostic
+  screen before login. Add the missing variables in Cloudflare Pages
+  Settings → Environment variables, then redeploy.
+- Missing server variables (`SUPABASE_URL`, `SUPABASE_ANON_KEY`,
+  `SUPABASE_SERVICE_ROLE_KEY`, `ANTHROPIC_API_KEY`): open `/api/health`.
+  The endpoint returns `ok: false`, a `missing` array, and next steps. It
+  never returns secret values.
+- API calls such as `/api/research`, `/api/decide`, and
+  `/api/auth/track` return a clear JSON error named
+  `Cloudflare environment variables are not configured` when required
+  server variables are absent.
+- After adding or changing variables, redeploy. Existing deployments do
+  not automatically receive newly configured build-time `VITE_` values.

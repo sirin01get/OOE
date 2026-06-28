@@ -1,5 +1,13 @@
 # Feature History
 
+## 2026-06-28 - Cloudflare Variable Diagnostics
+
+- Made missing `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` render a
+  startup diagnostic instead of crashing before login.
+- Made API routes return clear missing Cloudflare variable JSON errors.
+- Expanded `/api/health` troubleshooting output for server variables.
+- Documented Production/Preview variable checks and redeploy behavior.
+
 ## 2026-06-28 - Cloudflare Deploy Command Alias
 
 - Added `npm run deploy` as a short alias for the Pages upload command.
