@@ -1,0 +1,11 @@
+{
+  "app": {
+    "id": "ooe"
+  },
+  "auth": {
+    "google": true,
+    "apple": true,
+    "x": true,
+    "email": true
+  }
+}

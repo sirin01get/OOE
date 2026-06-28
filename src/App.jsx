@@ -7,14 +7,109 @@ import PrioritizeScreen from './components/PrioritizeScreen.jsx'
 import DecisionSummary from './components/DecisionSummary.jsx'
 import AuthGate from './components/AuthGate.jsx'
 
+const DEFAULT_APP_ID = 'ooe'
+const SESSION_LOAD_TIMEOUT_MS = 5000
+
+async function loadInitiatorAppId() {
+  try {
+    const response = await fetch('/config.json', { cache: 'no-store' })
+    if (!response.ok) return DEFAULT_APP_ID
+    const config = await response.json()
+    return typeof config?.app?.id === 'string' && config.app.id.trim()
+      ? config.app.id.trim()
+      : DEFAULT_APP_ID
+  } catch (err) {
+    return DEFAULT_APP_ID
+  }
+}
+
+function withTimeout(promise, timeoutMs, message) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      window.setTimeout(() => reject(new Error(message)), timeoutMs)
+    })
+  ])
+}
+
+async function trackAuthEvent(session, eventType) {
+  if (!session?.access_token || !session.user?.id) return
+
+  const initiatorAppId = await loadInitiatorAppId()
+  const trackingKey = `ooe:authTracked:${initiatorAppId}:${session.user.id}:${eventType}:${session.expires_at || 'session'}`
+  if (sessionStorage.getItem(trackingKey)) return
+
+  const response = await fetch('/api/auth/track', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${session.access_token}`
+    },
+    body: JSON.stringify({
+      initiator_app_id: initiatorAppId,
+      event_type: eventType
+    })
+  })
+
+  if (response.ok) {
+    sessionStorage.setItem(trackingKey, '1')
+  }
+}
+
 export default function App() {
   const [session, setSession] = useState(undefined) // undefined = loading
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setSession(data.session))
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, sess) => setSession(sess))
-    return () => sub.subscription.unsubscribe()
+    let mounted = true
+
+    withTimeout(
+      supabase.auth.getSession(),
+      SESSION_LOAD_TIMEOUT_MS,
+      'Supabase session load timed out'
+    )
+      .then(({ data }) => {
+        if (!mounted) return
+        if (data.session?.user?.email) {
+          localStorage.setItem('ooe:lastAuthEmail', data.session.user.email)
+        }
+        setSession(data.session)
+      })
+      .catch((err) => {
+        console.warn('Could not load Supabase session', err)
+        if (mounted) setSession(null)
+      })
+
+    const { data: sub } = supabase.auth.onAuthStateChange((event, sess) => {
+      if (!mounted) return
+      if (sess?.user?.email) {
+        localStorage.setItem('ooe:lastAuthEmail', sess.user.email)
+      }
+      if (event === 'SIGNED_IN') {
+        trackAuthEvent(sess, 'signed_in').catch((err) => {
+          console.warn('Could not track auth event', err)
+        })
+      }
+      setSession(sess)
+    })
+    return () => {
+      mounted = false
+      sub.subscription.unsubscribe()
+    }
   }, [])
+
+  async function handleSignOut() {
+    if (session?.user?.email) {
+      localStorage.setItem('ooe:lastAuthEmail', session.user.email)
+    }
+    sessionStorage.setItem('ooe:postSignOut', '1')
+    try {
+      await withTimeout(supabase.auth.signOut(), SESSION_LOAD_TIMEOUT_MS, 'Supabase sign-out timed out')
+    } catch (err) {
+      console.warn('Could not complete Supabase sign-out before returning to login', err)
+    } finally {
+      setSession(null)
+    }
+  }
 
   if (session === undefined) {
     return <div className="loading-screen">Loading OOE…</div>
@@ -23,6 +118,8 @@ export default function App() {
   if (!session) {
     return <AuthGate />
   }
+
+  const userEmail = session.user?.email
 
   return (
     <BrowserRouter>
@@ -35,9 +132,12 @@ export default function App() {
             <span className="brand-arrow">→</span>
             <span className="brand-e">E</span>
           </Link>
-          <button className="ghost-btn" onClick={() => supabase.auth.signOut()}>
-            Sign out
-          </button>
+          <div className="topbar-actions">
+            {userEmail && <span className="user-email">{userEmail}</span>}
+            <button className="ghost-btn" onClick={handleSignOut}>
+              Sign out
+            </button>
+          </div>
         </header>
         <main className="content">
           <Routes>

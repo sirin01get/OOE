@@ -3,13 +3,17 @@
 ## 1. Supabase
 
 1. In your Supabase project's SQL editor, run `migrations/001_init.sql`.
-2. Confirm RLS is enabled on `topics`, `research_runs`, `elements`,
-   `decisions` (the migration enables it, but verify in Table Editor →
-   each table → RLS toggle).
-3. Auth → Providers: confirm Email (magic link) is enabled. Set the site
-   URL and redirect URLs (Auth → URL Configuration) to your Cloudflare
-   Pages domain, e.g. `https://ooe.pages.dev` and any custom domain.
-4. Copy three values for later: Project URL, anon public key, service role
+2. Run `migrations/002_auth_events.sql` to create the `auth_events`
+   table used for authentication initiator tracking.
+3. Confirm RLS is enabled on `topics`, `research_runs`, `elements`,
+   `decisions`, and `auth_events` (the migrations enable it, but verify
+   in Table Editor → each table → RLS toggle).
+4. Auth → Providers: confirm Email (magic link) is enabled. Enable any
+   OAuth providers you plan to show in the UI: Google, Apple, and/or
+   X/Twitter. Set the site URL and redirect URLs (Auth → URL
+   Configuration) to your Cloudflare Pages domain, e.g.
+   `https://ooe.pages.dev` and any custom domain.
+5. Copy three values for later: Project URL, anon public key, service role
    key (Settings → API).
 
 ## 2. GitHub
@@ -37,7 +41,48 @@
 4. Deploy. Cloudflare builds the static site and auto-detects
    `functions/api/*.js` as Pages Functions, deploying them alongside.
 
-## 4. Branch strategy
+## 4. Authentication config
+
+The login UI reads `/config.json` before it renders sign-in methods. The
+source file is `public/config.json`, and Vite copies it into the deployed
+site during `npm run build`.
+
+Set each authentication method to `true` or `false`:
+
+```json
+{
+  "app": {
+    "id": "ooe"
+  },
+  "auth": {
+    "google": true,
+    "apple": false,
+    "x": true,
+    "email": true
+  }
+}
+```
+
+- `app.id` is the optional initiator app id written to `auth_events`
+  after a valid Supabase sign-in. Use a stable id such as `ooe`.
+- `google: false` hides "Continue with Google".
+- `apple: false` hides "Continue with Apple".
+- `x: false` hides "Continue with X".
+- `email: false` hides the email magic-link form.
+
+After changing `public/config.json`, commit and redeploy the Pages project.
+For a deployed site, you can verify the active config by opening
+`https://YOUR_DOMAIN/config.json` in the browser.
+
+If you enable `"x": true`, complete the X/Twitter provider setup in
+`AUTH_SETUP.md` first. The X Developer Portal and Supabase provider
+settings must share the same callback URL:
+
+```text
+https://YOUR_PROJECT.supabase.co/auth/v1/callback
+```
+
+## 5. Branch strategy
 
 - `main` → Production deployment (your production domain).
 - Any other branch (e.g. `dev`) → Preview deployment at an auto-generated
@@ -46,17 +91,28 @@
   Redirect URLs so magic links work in preview too (e.g.
   `https://*.ooe.pages.dev/**`).
 
-## 5. Custom domain (optional)
+## 6. Custom domain (optional)
 
 1. Workers & Pages → your project → Custom domains → Add domain.
 2. Follow Cloudflare's DNS instructions (if the domain is already on
    Cloudflare DNS this is a one-click attach).
 3. Update Supabase Auth redirect URLs to include the custom domain.
 
-## 6. Post-deploy checks
+## 7. Post-deploy checks
 
 - Sign up with a real email, confirm the magic link redirects back to the
   app and a session is established.
+- Confirm a row is inserted into `auth_events` with `initiator_app_id`
+  set to the value from `/config.json`.
+- Reload the app after OTP verification and confirm it opens directly to
+  the app while the Supabase session is active.
+- Confirm the signed-in email appears in the top bar.
+- Sign out and confirm the email field is prefilled with the last-used
+  email, the sign-out notice appears, and the app does not open unless a
+  valid Supabase session exists.
+- Simulate a slow or failing Supabase/session load and confirm the app
+  leaves "Loading OOE..." and returns to the sign-in screen.
+- Confirm disabled sign-in methods are hidden according to `/config.json`.
 - Create a topic, run research, confirm `research_runs`/`elements` rows
   appear in Supabase and are scoped to your user only.
 - Sign in as a second test user and confirm you cannot see the first
@@ -64,15 +120,19 @@
 - Reprioritize and confirm — check `decisions` rows write correctly and
   the topic status flips to `decided`.
 
-## 7. Cost control (recommended before sharing widely)
+## 8. Cost control (recommended before sharing widely)
 
 - Cloudflare → your Pages project → add a Rate Limiting rule on
   `/api/research` (e.g. N requests per IP/user per hour) to cap Anthropic
   API spend.
 - Optionally track research-run counts per user in Supabase and block
   new runs past a daily quota inside `functions/api/research.js`.
+- Monitor Supabase Auth logs and usage limits, especially on free-tier
+  projects. Repeated OTP requests can be throttled or delayed; loading
+  and sign-in troubleshooting should include Supabase project status,
+  Auth rate limits, and quota/paused-project checks.
 
-## 8. Rollback
+## 9. Rollback
 
 - Cloudflare Pages keeps a deployment history per project — any prior
   deployment can be promoted to Production instantly from the dashboard
